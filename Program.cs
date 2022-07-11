@@ -1,31 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Configuration;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Crm.Sdk.Messages;
-using Microsoft.Xrm.Tooling.Connector;
-using Microsoft.Xrm.Sdk.Messages;
+using Microsoft.Extensions.Configuration;
+using Microsoft.PowerPlatform.Dataverse.Client;
 
-namespace D365_ConsoleApp
+namespace DataverseConsole
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            #region Setup
-            Console.WriteLine("Creating Service Client");
-            CrmServiceClient oMSCRMConn = new CrmServiceClient(ConfigurationManager.ConnectionStrings["tldr-profile1"].ConnectionString);
-            Console.WriteLine("Setting Up Org Service");
-            IOrganizationService service = (IOrganizationService)oMSCRMConn.OrganizationWebProxyClient != null ? (IOrganizationService)oMSCRMConn.OrganizationWebProxyClient : (IOrganizationService)oMSCRMConn.OrganizationServiceProxy;
-            Console.WriteLine(oMSCRMConn.IsReady ? "Connected" : "Failed to Connect");
-            Console.WriteLine($"Current User: {((WhoAmIResponse)service.Execute(new WhoAmIRequest())).UserId}");
-            #endregion
+	internal class Program
+	{
+		public IConfiguration Configuration { get; }
 
-            //Write
-            //Some
-            //Code
+		private Program ()
+		{
+			Configuration = new ConfigurationBuilder()
+				.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+				.Build();
+		}
 
-        }
-    }
+		private static void Main (string[] args)
+		{
+			#region SETUP
+
+			Program app = new();
+			ServiceClient service = new(app.Configuration.GetConnectionString("DATAVERSE_CONN_OAUTH"));
+			WhoAmIResponse whoAmIResp = (WhoAmIResponse)service.Execute(new WhoAmIRequest());
+			Console.WriteLine("Logged in User GUID: {0}", whoAmIResp.UserId);
+
+			#endregion SETUP
+
+			Console.WriteLine("Press any key to continue");
+			Console.ReadKey();
+			service.Dispose();
+		}
+	}
 }
